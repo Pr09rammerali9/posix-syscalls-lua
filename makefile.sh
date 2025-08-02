@@ -1,7 +1,7 @@
 Cc=clang
 flgs=-fPIC -shared
 cf=main.c
-libobj=lua-posix-syscalls.so
+libobj=liblua-posix-syscalls.so
 libpath=/usr/lib
 if [[ $1 == "build" ]]; then
 
