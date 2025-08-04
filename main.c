@@ -7,6 +7,7 @@
 #include <sys/types.h>
 #include <string.h>
 #include <fcntl.h>
+#include <sys/wait.h>
 
 static int l_fork(lua_State* L) {
     pid_t pid = fork();
@@ -141,6 +142,44 @@ static int l_ioctl(lua_State* L) {
     return 1;
 }
 
+static int l_execve(lua_State* L) {
+    const char *pathname = luaL_checkstring(L, 1);
+    luaL_checktype(L, 2, LUA_TTABLE);
+
+    int n_args = luaL_len(L, 2);
+    char **argv = (char**)malloc(sizeof(char*) * (n_args + 2));
+    
+    argv[0] = (char*)pathname;
+    
+    for (int i = 1; i <= n_args; i++) {
+        lua_geti(L, 2, i);
+        argv[i] = (char*)luaL_checkstring(L, -1);
+        lua_pop(L, 1);
+    }
+    argv[n_args + 1] = NULL; //
+    execve(pathname, argv, NULL);
+    
+    free(argv);
+
+    return luaL_error(L, "execve() failed: %s", strerror(errno));
+}
+
+static int l_waitpid(lua_State* L) {
+    pid_t pid = (pid_t)luaL_checkinteger(L, 1);
+    int options = luaL_checkinteger(L, 2);
+    int status;
+
+    pid_t ret_pid = waitpid(pid, &status, options);
+
+    if (ret_pid == -1) {
+        return luaL_error(L, "waitpid() failed: %s", strerror(errno));
+    }
+    
+    lua_pushinteger(L, ret_pid);
+    lua_pushinteger(L, status);
+    return 2;
+}
+
 
 int luaopen_sys(lua_State *L){
     static const struct luaL_Reg sys[] = {
@@ -150,7 +189,9 @@ int luaopen_sys(lua_State *L){
         {"open", l_open},
         {"getpid", l_getpid},
         {"read", l_read},
-        {"ioctl", l_ioctl}, 
+        {"ioctl", l_ioctl},
+        {"execve", l_execve}, 
+        {"waitpid, l_waitpid}, 
         {NULL, NULL}
     };
 
