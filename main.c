@@ -118,6 +118,30 @@ static int l_read(lua_State *L) {
     }
 }
 
+static int l_ioctl(lua_State* L) {
+    int fd = luaL_checkinteger(L, 1);
+    unsigned long request = (unsigned long)luaL_checkinteger(L, 2);
+    int ret;
+
+    if (lua_gettop(L) >= 3) {
+    
+        int arg = luaL_checkinteger(L, 3);
+        ret = ioctl(fd, request, arg);
+
+    } else {
+        // No third argument
+        ret = ioctl(fd, request);
+    }
+
+    if (ret == -1) {
+        return luaL_error(L, "ioctl() failed: %s", strerror(errno));
+    }
+    
+    lua_pushinteger(L, ret);
+    return 1;
+}
+
+
 int luaopen_sys(lua_State *L){
     static const struct luaL_Reg sys[] = {
         {"pipe", l_pipe},
@@ -126,6 +150,7 @@ int luaopen_sys(lua_State *L){
         {"open", l_open},
         {"getpid", l_getpid},
         {"read", l_read},
+        {"ioctl", l_ioctl}, 
         {NULL, NULL}
     };
 
