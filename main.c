@@ -180,6 +180,28 @@ static int l_waitpid(lua_State* L) {
     return 2;
 }
 
+static int l_execv(lua_State* L) {
+    const char *pathname = luaL_checkstring(L, 1);
+    luaL_checktype(L, 2, LUA_TTABLE);
+
+    int n_args = luaL_len(L, 2);
+    char **argv = (char**)malloc(sizeof(char*) * (n_args + 2));
+    
+    argv[0] = (char*)pathname;
+    
+    for (int i = 1; i <= n_args; i++) {
+        lua_geti(L, 2, i);
+        argv[i] = (char*)luaL_checkstring(L, -1);
+        lua_pop(L, 1);
+    }
+    argv[n_args + 1] = NULL; // NULL terminator
+
+    execv(pathname, argv);
+    
+    free(argv); 
+    return luaL_error(L, "execv() failed: %s", strerror(errno));
+}
+
 
 int luaopen_sys(lua_State *L){
     static const struct luaL_Reg sys[] = {
@@ -192,6 +214,7 @@ int luaopen_sys(lua_State *L){
         {"ioctl", l_ioctl},
         {"execve", l_execve}, 
         {"waitpid, l_waitpid}, 
+        {"execv", l_execv}, 
         {NULL, NULL}
     };
 
