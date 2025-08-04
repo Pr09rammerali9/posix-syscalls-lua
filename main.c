@@ -91,30 +91,30 @@ static int l_pipe(lua_State *L) {
 }
 
 static int l_read(lua_State *L) {
-        int fd = luaL_checkinteger(L, 1);
-
-        size_t count = luaL_checkinteger(L, 2);
-
-        char* buf = (char *)malloc(count);
-
-        if (buf == NULL) {
-                return luaL_error(L, "Failed to allocate buffer for reading: %s", strerror(errno));
-        }
-
-        ssize_t bytes_read = read(fd, buf, count);
-
-        if (bytes_read > 0) {
-            lua_pushlstring(L, buf, bytes_read);
-            free(buf);
-            return 1;
-        } else if (bytes_read == 0) {
-            lua_pushstring(L, "");
-            free(buf);
-            return 1;
-        } else {
-            free(buf);
-            return luaL_error(L, "read() failed: %s", strerror(errno));
-        }
+    int fd = luaL_checkinteger(L, 1);
+    size_t count = luaL_checkinteger(L, 2);
+    
+    char* buf = (char *)malloc(count);
+    
+    if (buf == NULL) {
+        return luaL_error(L, "Failed to allocate buffer for reading: %s", strerror(errno));
+    }
+    
+    ssize_t bytes_read = read(fd, buf, count);
+    
+    if (bytes_read > 0) {
+        lua_pushlstring(L, buf, bytes_read);
+        free(buf);
+        return 1;
+    } else if (bytes_read == 0) {
+        lua_pushstring(L, "");
+        free(buf);
+        return 1;
+    } else {
+        // Corrected path: free the buffer before returning the error
+        free(buf); 
+        return luaL_error(L, "read() failed: %s", strerror(errno));
+    }
 }
 
 int luaopen_sys(lua_State *L){
